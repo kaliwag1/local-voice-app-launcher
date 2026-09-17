@@ -1,0 +1,8 @@
+# the app has its own repository
+qwen-audio-agent-editable/
+# python venv, build output, scratch and runtime state
+.voice-env/
+outputs/
+work/
+Last Rebuild.log
+Last Voice App Start.txt
