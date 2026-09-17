@@ -6,3 +6,8 @@ outputs/
 work/
 Last Rebuild.log
 Last Voice App Start.txt
+# in-app picks (per machine) and personal voice clips
+.selected-voice-context
+.selected-voice
+voices/*
+!voices/README.txt

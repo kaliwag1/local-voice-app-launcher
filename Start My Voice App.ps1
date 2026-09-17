@@ -67,7 +67,19 @@ if (-not $existing) {
 
 if (-not (Get-Listener 8765)) {
     Set-Content -LiteralPath $statusPath -Value 'Starting local speech...' -Encoding UTF8
-    $speechArgs = @('serve', '--device', 'cpu', '--stt', 'parakeet-tdt', '--llm_backend', 'chat-completions', '--model_name', $modelKey, '--responses_api_base_url', 'http://127.0.0.1:1234/v1', '--responses_api_api_key', 'lm-studio', '--tts', 'pocket', '--no_smart_turn')
+    $speechArgs = @('serve', '--device', 'cpu', '--stt', 'parakeet-tdt', '--llm_backend', 'chat-completions', '--model_name', $modelKey, '--responses_api_base_url', 'http://127.0.0.1:1234/v1', '--responses_api_api_key', 'lm-studio', '--tts', 'pocket')
+    # The in-app "Voice" picker writes .selected-voice: a Pocket TTS preset name or the
+    # bare file name of a clip in the voices folder. Keep in step with desktop/src/local-model-switch.mjs.
+    $voiceFile = Join-Path $voiceRoot '.selected-voice'
+    if (Test-Path -LiteralPath $voiceFile) {
+        $voice = (Get-Content -LiteralPath $voiceFile -Raw).Trim()
+        if ($voice -and $voice -notmatch '[\\/]') {
+            $voiceClip = Join-Path (Join-Path $voiceRoot 'voices') $voice
+            if (Test-Path -LiteralPath $voiceClip) { $speechArgs += @('--pocket_tts_voice', $voiceClip) }
+            elseif ($voice -match '^[a-z]+$') { $speechArgs += @('--pocket_tts_voice', $voice) }
+        }
+    }
+    $speechArgs += '--no_smart_turn'
     Start-Process -FilePath $speechExe -ArgumentList $speechArgs -WorkingDirectory $voiceRoot -WindowStyle Hidden
 }
 for ($i = 0; $i -lt 120 -and -not (Get-Listener 8765); $i++) { Start-Sleep -Seconds 1 }
