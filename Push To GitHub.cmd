@@ -1,7 +1,7 @@
 @echo off
 setlocal
 REM ---- edit this line only ----
-set "GH_USER=YOUR_GITHUB_USERNAME"
+set "GH_USER=kaliwag1"
 REM ------------------------------
 if "%GH_USER%"=="YOUR_GITHUB_USERNAME" (
   echo Open this file in Notepad and put your GitHub username on the GH_USER line first.
