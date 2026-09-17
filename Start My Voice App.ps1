@@ -13,6 +13,14 @@ $opencodeBin = 'C:\Users\JakeW\AppData\Roaming\npm\node_modules\opencode-ai\bin\
 $selectionFile = Join-Path $voiceRoot '.selected-voice-model'
 # Context window for the local chat model. OpenCode agent tasks need well over 8k.
 $modelContextLength = 32768
+# The in-app "Context" picker writes this file; it wins over the default above.
+$contextFile = Join-Path $voiceRoot '.selected-voice-context'
+if (Test-Path -LiteralPath $contextFile) {
+    $chosenContext = 0
+    if ([int]::TryParse((Get-Content -LiteralPath $contextFile -Raw).Trim(), [ref]$chosenContext) -and $chosenContext -ge 8192) {
+        $modelContextLength = $chosenContext
+    }
+}
 
 function Get-Listener([int]$port) {
     Get-NetTCPConnection -LocalAddress '127.0.0.1' -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
