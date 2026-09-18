@@ -42,6 +42,23 @@ if ($runningApp) {
     return
 }
 
+$bonsaiSelected = $modelKey -in @('bonsai/official', 'bonsai/crack')
+$modelEndpoint = 'http://127.0.0.1:1234/v1'
+$speechModel = $modelKey
+$bonsaiHelper = Join-Path $voiceRoot 'qwen-audio-agent-editable\desktop\src\bonsai-runtime.mjs'
+$nodeExe = (Get-Command node.exe -ErrorAction Stop).Source
+if ($bonsaiSelected) {
+    Set-Content -LiteralPath $statusPath -Value 'Starting Bonsai (Prism)...' -Encoding UTF8
+    $loaded = @((& $lmsExe ps --json | ConvertFrom-Json))
+    if ($LASTEXITCODE -ne 0) { throw 'Could not check LM Studio VRAM use.' }
+    if ($loaded.Count -gt 0) { throw 'Unload models in LM Studio before starting Bonsai to free VRAM.' }
+    & $nodeExe $bonsaiHelper start $modelKey $modelContextLength $voiceRoot
+    if ($LASTEXITCODE -ne 0) { throw 'Bonsai failed to start. Check .voice-bonsai-runtime.json.log in the app folder, or close another service on port 8080.' }
+    $modelEndpoint = 'http://127.0.0.1:8080/v1'
+    $speechModel = 'bonsai'
+} else {
+& $nodeExe $bonsaiHelper stop unused 0 $voiceRoot
+if ($LASTEXITCODE -ne 0) { throw 'Could not release the Bonsai server. Check port 8080 before loading another model.' }
 Set-Content -LiteralPath $statusPath -Value 'Starting LM Studio...' -Encoding UTF8
 & $lmsExe server start | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'LM Studio server did not start.' }
@@ -65,9 +82,11 @@ if (-not $existing) {
     if ($LASTEXITCODE -ne 0) { throw 'The selected model did not load.' }
 }
 
+}
+
 if (-not (Get-Listener 8765)) {
     Set-Content -LiteralPath $statusPath -Value 'Starting local speech...' -Encoding UTF8
-    $speechArgs = @('serve', '--device', 'cpu', '--stt', 'parakeet-tdt', '--llm_backend', 'chat-completions', '--model_name', $modelKey, '--responses_api_base_url', 'http://127.0.0.1:1234/v1', '--responses_api_api_key', 'lm-studio', '--tts', 'pocket')
+    $speechArgs = @('serve', '--device', 'cpu', '--stt', 'parakeet-tdt', '--llm_backend', 'chat-completions', '--model_name', $speechModel, '--responses_api_base_url', $modelEndpoint, '--responses_api_api_key', 'lm-studio', '--tts', 'pocket')
     # The in-app "Voice" picker writes .selected-voice: a Pocket TTS preset name or the
     # bare file name of a clip in the voices folder. Keep in step with desktop/src/local-model-switch.mjs.
     $voiceFile = Join-Path $voiceRoot '.selected-voice'
