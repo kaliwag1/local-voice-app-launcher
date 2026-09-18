@@ -34,7 +34,10 @@ for ($i = 0; $i -lt $models.Count; $i++) {
 }
 if ($ListModels) { exit 0 }
 
-$previous = if (Test-Path $selectionFile) { (Get-Content $selectionFile -Raw).Trim() } else { 'google/gemma-4-26b-a4b-qat' }
+$selectionDefaultFile = Join-Path $root '.selected-voice-model.default'
+$previous = if (Test-Path $selectionFile) { (Get-Content $selectionFile -Raw).Trim() }
+    elseif (Test-Path $selectionDefaultFile) { (Get-Content $selectionDefaultFile -Raw).Trim() }
+    else { 'google/gemma-4-26b-a4b-qat' }
 $defaultIndex = 1
 for ($i = 0; $i -lt $models.Count; $i++) { if ($models[$i].modelKey -eq $previous) { $defaultIndex = $i + 1; break } }
 $answer = Read-Host "`nEnter a number (Enter keeps $defaultIndex)"

@@ -14,6 +14,9 @@ $lmsExe = Join-Path $env:USERPROFILE '.lmstudio\bin\lms.exe'
 $speechExe = Join-Path $voiceRoot '.voice-env\Scripts\speech-to-speech.exe'
 $opencodeBin = 'C:\Users\JakeW\AppData\Roaming\npm\node_modules\opencode-ai\bin\opencode.exe'
 $selectionFile = Join-Path $voiceRoot '.selected-voice-model'
+# The live pick is machine-local and not in Git. A fresh clone or a restore has only
+# the tracked seed, so fall back to it rather than refusing to start.
+$selectionDefaultFile = Join-Path $voiceRoot '.selected-voice-model.default'
 # Context window for the local chat model. OpenCode agent tasks need well over 8k.
 $modelContextLength = 32768
 # The in-app "Context" picker writes this file; it wins over the default above.
@@ -32,9 +35,12 @@ function Get-Listener([int]$port) {
 if (-not (Test-Path -LiteralPath $appExe)) { throw 'The editable desktop app has not been built yet.' }
 if (-not (Test-Path -LiteralPath $lmsExe)) { throw 'LM Studio is missing.' }
 if (-not (Test-Path -LiteralPath $speechExe)) { throw 'The local speech service is missing.' }
-if (-not (Test-Path -LiteralPath $selectionFile)) { throw 'No local model has been selected yet.' }
-$modelKey = (Get-Content -LiteralPath $selectionFile -Raw).Trim()
-if (-not $modelKey) { throw 'The selected local model is empty.' }
+$activeSelectionFile = if (Test-Path -LiteralPath $selectionFile) { $selectionFile } else { $selectionDefaultFile }
+if (-not (Test-Path -LiteralPath $activeSelectionFile)) {
+    throw 'No local model has been selected yet, and .selected-voice-model.default is missing.'
+}
+$modelKey = (Get-Content -LiteralPath $activeSelectionFile -Raw).Trim()
+if (-not $modelKey) { throw "The selected local model is empty ($activeSelectionFile)." }
 
 $runningApp = Get-CimInstance Win32_Process -Filter "Name = 'Qwen Audio Agent.exe'" -ErrorAction SilentlyContinue |
     Where-Object { $_.ExecutablePath -eq $appExe } | Select-Object -First 1

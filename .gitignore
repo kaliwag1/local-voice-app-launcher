@@ -8,8 +8,11 @@ Last Rebuild.log
 Last Voice App Start.txt
 .voice-bonsai-runtime.json*
 nltk_data/
-# in-app picks (per machine) and personal voice clips
+# in-app picks (per machine) and personal voice clips. The model pick is the only
+# one the launcher cannot start without, so .selected-voice-model.default is tracked
+# as the seed for a fresh clone and the live file is ignored like the others.
 .selected-voice-context
 .selected-voice
+.selected-voice-model
 voices/*
 !voices/README.txt
