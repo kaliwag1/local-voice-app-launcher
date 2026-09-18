@@ -1,5 +1,6 @@
 ﻿$ErrorActionPreference = 'Stop'
 $voiceRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$env:NLTK_DATA = (Join-Path $voiceRoot 'nltk_data') + $(if ($env:NLTK_DATA) { [IO.Path]::PathSeparator + $env:NLTK_DATA } else { '' })
 $statusPath = Join-Path $voiceRoot 'Last Voice App Start.txt'
 Set-Content -LiteralPath $statusPath -Value 'Checking local voice app...' -Encoding UTF8
 trap {
