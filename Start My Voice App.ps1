@@ -1,5 +1,7 @@
 ﻿$ErrorActionPreference = 'Stop'
 $voiceRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$env:ZD_VOICE_REASONING_ADAPTER = '1'
+$env:PYTHONPATH = (Join-Path $voiceRoot 'qwen-audio-agent-editable\scripts\runtime\speech-adapter') + $(if ($env:PYTHONPATH) { [IO.Path]::PathSeparator + $env:PYTHONPATH } else { '' })
 $env:NLTK_DATA = (Join-Path $voiceRoot 'nltk_data') + $(if ($env:NLTK_DATA) { [IO.Path]::PathSeparator + $env:NLTK_DATA } else { '' })
 $statusPath = Join-Path $voiceRoot 'Last Voice App Start.txt'
 Set-Content -LiteralPath $statusPath -Value 'Checking local voice app...' -Encoding UTF8
@@ -99,7 +101,7 @@ if (-not (Get-Listener 8765)) {
             elseif ($voice -match '^[a-z]+$') { $speechArgs += @('--pocket_tts_voice', $voice) }
         }
     }
-    $speechArgs += '--no_smart_turn'
+    $speechArgs += @('--responses_api_disable_thinking', 'false', '--no_smart_turn')
     Start-Process -FilePath $speechExe -ArgumentList $speechArgs -WorkingDirectory $voiceRoot -WindowStyle Hidden
 }
 for ($i = 0; $i -lt 120 -and -not (Get-Listener 8765); $i++) { Start-Sleep -Seconds 1 }
