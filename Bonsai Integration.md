@@ -4,7 +4,9 @@ The launcher now reads `bonsai/official` or `bonsai/crack` from `.selected-voice
 the existing Prism runtime through `qwen-audio-agent-editable/desktop/src/bonsai-runtime.mjs`.
 It routes speech to localhost:8080/v1 with alias `bonsai`, and reuses a healthy owned server.
 Other loaded LM Studio models must be unloaded first. Switching in the app unloads the previous
-selected model automatically. Returning to LM Studio stops only the app-owned Bonsai process.
+selected model automatically. Returning to LM Studio stops only the app-owned Bonsai process,
+and quitting the app now stops it as well, so the weights do not sit in VRAM after you close
+the window (closing to the tray keeps it warm on purpose; a crash or force-kill still leaves it).
 
 Runtime executable and downloaded GGUFs are not copied or committed. State and logs
 `.voice-bonsai-runtime.json*` are ignored. Existing personal model selection is not changed.
