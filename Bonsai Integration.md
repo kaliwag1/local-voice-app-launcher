@@ -7,6 +7,9 @@ Other loaded LM Studio models must be unloaded first. Switching in the app unloa
 selected model automatically. Returning to LM Studio stops only the app-owned Bonsai process,
 and quitting the app now stops it as well, so the weights do not sit in VRAM after you close
 the window (closing to the tray keeps it warm on purpose; a crash or force-kill still leaves it).
+Rebuild My Voice App.cmd force-kills the app, which skips that shutdown, so it now releases the
+server itself after the taskkill. Restart Speech Service.cmd relaunches straight away and the
+launcher reuses a healthy server, so it needs no such step.
 
 Runtime executable and downloaded GGUFs are not copied or committed. State and logs
 `.voice-bonsai-runtime.json*` are ignored. Existing personal model selection is not changed.
