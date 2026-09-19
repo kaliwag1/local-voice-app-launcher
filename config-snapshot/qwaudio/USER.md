@@ -16,4 +16,6 @@
 
 <!-- 例如：- 默认使用简短、自然的中文回答 -->
 
+- Always reply in English, unless I write or speak to you in another language.
+
 My Desktop is C:\Users\JakeW\OneDrive\Desktop (OneDrive-backed). Use that path whenever I say "Desktop"; C:\Users\JakeW\Desktop is a leftover local folder that Windows does not display.
