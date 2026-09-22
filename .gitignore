@@ -5,6 +5,7 @@ qwen-audio-agent-editable/
 outputs/
 work/
 Last Rebuild.log
+Last Speech Service*.log
 Last Voice App Start.txt
 .voice-bonsai-runtime.json*
 nltk_data/

@@ -108,7 +108,9 @@ if (-not (Get-Listener 8765)) {
         }
     }
     $speechArgs += @('--responses_api_disable_thinking', 'false', '--no_smart_turn')
-    Start-Process -FilePath $speechExe -ArgumentList $speechArgs -WorkingDirectory $voiceRoot -WindowStyle Hidden
+    # Stderr only: stdout carries the spoken transcript and replies, which stay unlogged.
+    Start-Process -FilePath $speechExe -ArgumentList $speechArgs -WorkingDirectory $voiceRoot -WindowStyle Hidden `
+        -RedirectStandardError (Join-Path $voiceRoot 'Last Speech Service.log')
 }
 for ($i = 0; $i -lt 120 -and -not (Get-Listener 8765); $i++) { Start-Sleep -Seconds 1 }
 if (-not (Get-Listener 8765)) { throw 'The local speech service did not start.' }
