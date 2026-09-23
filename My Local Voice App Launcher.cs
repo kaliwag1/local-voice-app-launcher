@@ -290,22 +290,32 @@ internal sealed class StartupWindow : Form
             if (File.Exists(log)) SetStatus(File.ReadAllText(log, Encoding.UTF8).Trim());
         } catch (IOException) { }
 
+        // The script launches the app before speech has finished loading and then keeps
+        // checking on speech, so the app window can be up while the script still runs.
+        if ((step >= 3 || (scriptFinished && scriptSucceeded)) && BringAppForward()) {
+            Finish();
+            return;
+        }
         if (!scriptFinished) return;
         if (!scriptSucceeded) {
             Fail(status.StartsWith("Failed: ") ? status.Substring(8) : status);
             return;
         }
+        SetStatus("Waiting for the app window...");
+        if (DateTime.UtcNow > windowDeadline) Fail("The app started, but its window did not open.");
+    }
+
+    private bool BringAppForward()
+    {
         foreach (var process in Process.GetProcessesByName("Qwen Audio Agent")) {
             try {
                 if (process.MainWindowHandle == IntPtr.Zero) continue;
                 ShowWindow(process.MainWindowHandle, 9);
                 SetForegroundWindow(process.MainWindowHandle);
-                Finish();
-                return;
+                return true;
             } finally { process.Dispose(); }
         }
-        SetStatus("Waiting for the app window...");
-        if (DateTime.UtcNow > windowDeadline) Fail("The app started, but its window did not open.");
+        return false;
     }
 
     private void SetStatus(string text)

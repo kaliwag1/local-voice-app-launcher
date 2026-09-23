@@ -120,9 +120,6 @@ if (-not (Get-Listener 8765)) {
     Start-Process -FilePath $speechExe -ArgumentList $speechArgs -WorkingDirectory $voiceRoot -WindowStyle Hidden `
         -RedirectStandardError (Join-Path $voiceRoot 'Last Speech Service.log')
 }
-for ($i = 0; $i -lt 120 -and -not (Get-Listener 8765); $i++) { Start-Sleep -Seconds 1 }
-if (-not (Get-Listener 8765)) { throw 'The local speech service did not start.' }
-
 # The old browser shortcut owns a separate gateway on this port. Release only
 # that known process so the desktop app owns its gateway and can switch models.
 $oldGateway = Get-Listener 3101
@@ -143,3 +140,10 @@ $env:OPENCODE_BIN = $opencodeBin
 Set-Content -LiteralPath $statusPath -Value 'Opening voice app...' -Encoding UTF8
 Start-Process -FilePath $appExe -WorkingDirectory (Split-Path -Parent $appExe)
 Set-Content -LiteralPath $statusPath -Value 'App launch requested.' -Encoding UTF8
+
+# Speech takes 25-50 s to load and the app needs none of it to open, so it is no longer
+# waited for before the app starts: the Gateway retries the speech link (backing off to
+# ~10 s) until it answers. A service that never comes up is still reported here.
+for ($i = 0; $i -lt 120 -and -not (Get-Listener 8765); $i++) { Start-Sleep -Seconds 1 }
+if (-not (Get-Listener 8765)) { throw 'The local speech service did not start. See Last Speech Service.log.' }
+Set-Content -LiteralPath $statusPath -Value 'Speech ready.' -Encoding UTF8
