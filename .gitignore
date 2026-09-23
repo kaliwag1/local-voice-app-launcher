@@ -15,5 +15,6 @@ nltk_data/
 .selected-voice-context
 .selected-voice
 .selected-voice-model
+.selected-app-mode
 voices/*
 !voices/README.txt

@@ -93,13 +93,21 @@ if (-not $existing) {
 
 }
 
+# Settings -> Application -> Conversation writes .selected-app-mode. Text mode still starts
+# the speech service - typed chat reaches the model through it - but with stand-ins for
+# its speech models (speech-adapter\text_only.py), so nothing is transcribed or spoken.
+$appModeFile = Join-Path $voiceRoot '.selected-app-mode'
+$textMode = (Test-Path -LiteralPath $appModeFile) -and ((Get-Content -LiteralPath $appModeFile -Raw).Trim() -eq 'text')
+
 if (-not (Get-Listener 8765)) {
-    Set-Content -LiteralPath $statusPath -Value 'Starting local speech...' -Encoding UTF8
-    $speechArgs = @('serve', '--device', 'cpu', '--stt', 'parakeet-tdt', '--llm_backend', 'chat-completions', '--model_name', $speechModel, '--responses_api_base_url', $modelEndpoint, '--responses_api_api_key', 'lm-studio', '--tts', 'pocket')
+    $sttBackend = if ($textMode) { 'text-only' } else { 'parakeet-tdt' }
+    $ttsBackend = if ($textMode) { 'text-only' } else { 'pocket' }
+    Set-Content -LiteralPath $statusPath -Value $(if ($textMode) { 'Starting local chat (text only)...' } else { 'Starting local speech...' }) -Encoding UTF8
+    $speechArgs = @('serve', '--device', 'cpu', '--stt', $sttBackend, '--llm_backend', 'chat-completions', '--model_name', $speechModel, '--responses_api_base_url', $modelEndpoint, '--responses_api_api_key', 'lm-studio', '--tts', $ttsBackend)
     # The in-app "Voice" picker writes .selected-voice: a Pocket TTS preset name or the
     # bare file name of a clip in the voices folder. Keep in step with desktop/src/local-model-switch.mjs.
     $voiceFile = Join-Path $voiceRoot '.selected-voice'
-    if (Test-Path -LiteralPath $voiceFile) {
+    if (-not $textMode -and (Test-Path -LiteralPath $voiceFile)) {
         $voice = (Get-Content -LiteralPath $voiceFile -Raw).Trim()
         if ($voice -and $voice -notmatch '[\\/]') {
             $voiceClip = Join-Path (Join-Path $voiceRoot 'voices') $voice
