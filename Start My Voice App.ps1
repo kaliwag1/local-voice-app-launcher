@@ -99,6 +99,7 @@ if (-not $existing) {
 $appModeFile = Join-Path $voiceRoot '.selected-app-mode'
 $textMode = (Test-Path -LiteralPath $appModeFile) -and ((Get-Content -LiteralPath $appModeFile -Raw).Trim() -eq 'text')
 
+$speechProcess = $null
 if (-not (Get-Listener 8765)) {
     $sttBackend = if ($textMode) { 'text-only' } else { 'parakeet-tdt' }
     $ttsBackend = if ($textMode) { 'text-only' } else { 'pocket' }
@@ -117,8 +118,10 @@ if (-not (Get-Listener 8765)) {
     }
     $speechArgs += @('--responses_api_disable_thinking', 'false', '--no_smart_turn')
     # Stderr only: stdout carries the spoken transcript and replies, which stay unlogged.
-    Start-Process -FilePath $speechExe -ArgumentList $speechArgs -WorkingDirectory $voiceRoot -WindowStyle Hidden `
+    $speechProcess = Start-Process -FilePath $speechExe -ArgumentList $speechArgs -WorkingDirectory $voiceRoot -WindowStyle Hidden -PassThru `
         -RedirectStandardError (Join-Path $voiceRoot 'Last Speech Service.log')
+    # Holding the handle keeps ExitCode readable once it exits; without it PowerShell reports none.
+    $null = $speechProcess.Handle
 }
 # The old browser shortcut owns a separate gateway on this port. Release only
 # that known process so the desktop app owns its gateway and can switch models.
@@ -143,7 +146,13 @@ Set-Content -LiteralPath $statusPath -Value 'App launch requested.' -Encoding UT
 
 # Speech takes 25-50 s to load and the app needs none of it to open, so it is no longer
 # waited for before the app starts: the Gateway retries the speech link (backing off to
-# ~10 s) until it answers. A service that never comes up is still reported here.
-for ($i = 0; $i -lt 120 -and -not (Get-Listener 8765); $i++) { Start-Sleep -Seconds 1 }
+# ~10 s) until it answers. A service that never comes up is still reported here, and one
+# that has already exited is reported at once rather than after the full two minutes.
+for ($i = 0; $i -lt 120 -and -not (Get-Listener 8765); $i++) {
+    if ($speechProcess -and $speechProcess.HasExited) {
+        throw "The local speech service stopped while starting (exit code $($speechProcess.ExitCode)). See Last Speech Service.log."
+    }
+    Start-Sleep -Seconds 1
+}
 if (-not (Get-Listener 8765)) { throw 'The local speech service did not start. See Last Speech Service.log.' }
 Set-Content -LiteralPath $statusPath -Value 'Speech ready.' -Encoding UTF8
